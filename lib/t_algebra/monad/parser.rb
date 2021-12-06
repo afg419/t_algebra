@@ -26,6 +26,12 @@ module TAlgebra
           parser = parse(o.respond_to?(:[]) ? o[key] : o.send(key))
           parser.with_name(key).required
         end
+
+        def run_bind(ma, &block)
+          raise "Yield blocks must return instances of #{self}. Got #{ma.class}" unless [Parser, Parser::Optional].include?(ma.class)
+
+          ma.as_parser.bind(&block)
+        end
       end
 
       attr_reader :name
@@ -89,6 +95,10 @@ module TAlgebra
         def required
           Parser.new(is: is, value: value, name: name).required
         end
+      end
+
+      def as_parser
+        instance_of?(Parser::Optional) ? Parser.new(is: is, value: value, name: name) : self
       end
 
       private

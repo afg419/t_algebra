@@ -1,5 +1,5 @@
 require "bundler/setup"
-require_relative "../lib/t_algebra/t_algebra"
+require_relative "../lib/t_algebra"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

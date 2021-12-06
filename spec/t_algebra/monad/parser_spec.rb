@@ -282,6 +282,19 @@ RSpec.describe TAlgebra::Monad::Parser do
 
         expect(result).to eq(failure("err"))
       end
+
+      it "runs on rights with nil value" do
+        ex = {a: 1, b: 2, d: 3}
+        result = described_class.run do |y|
+          v1 = y.yield { fetch(ex, :a) }
+          v2 = y.yield { fetch(ex, :b) }
+          v3 = (y.yield { fetch(ex, :c) }) || 0
+          v4 = y.yield { fetch(ex, :d) }
+          v1 + v2 + v3 + v4
+        end.extract_parsed
+
+        expect(result).to eq(6)
+      end
     end
   end
 

@@ -21,6 +21,11 @@ module TAlgebra
         run_recursive(e, [])
       end
 
+      def run_bind(ma)
+        raise "Yield blocks must return instances of #{self}" unless ma.instance_of?(self)
+        ma.bind
+      end
+
       def lift_a2(ma, mb, &block)
         ma.bind do |a|
           mb.bind do |b|
@@ -42,7 +47,7 @@ module TAlgebra
         if is_complete(enum)
           pure(value(enum))
         else
-          enum.next.call.bind do |a|
+          run_bind(enum.next.call) do |a|
             run_recursive(enum, historical_values + [a])
           end
         end
