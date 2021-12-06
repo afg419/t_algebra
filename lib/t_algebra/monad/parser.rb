@@ -43,6 +43,14 @@ module TAlgebra
       alias_method :valid?, :right?
       alias_method :failure?, :left?
 
+      def fetch(key)
+        fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.optional
+      end
+
+      def fetch!(key)
+        fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.required
+      end
+
       def fmap
         super.with_name(name)
       rescue => e

@@ -119,6 +119,26 @@ RSpec.describe TAlgebra::Monad::Parser do
         expect(e.required.failure?).to eq(true)
         expect(e.required).to be_instance_of(TAlgebra::Monad::Parser)
       end
+
+      describe "#fetch" do
+        it "does &." do
+          ex = parse({a: {b: {c: 5}}})
+          result1 = ex.fetch(:a).fetch(:b).fetch(:c)
+          expect(result1.extract_parsed).to eq(5)
+
+          result2 = ex.fetch(:a).fetch(:non_existant).fetch(:c)
+          expect(result2.extract_parsed).to eq(nil)
+        end
+
+        it "does ." do
+          ex = parse({a: {b: {c: 5}}})
+          result1 = ex.fetch!(:a).fetch!(:b).fetch!(:c)
+          expect(result1.extract_parsed).to eq(5)
+
+          result2 = ex.fetch!(:a).fetch!(:non_existant).fetch!(:c)
+          expect(result2.extract_parsed { |e| StandardError.new(e) }).to be_instance_of(StandardError)
+        end
+      end
     end
 
     context "Functor" do
@@ -286,10 +306,11 @@ RSpec.describe TAlgebra::Monad::Parser do
       it "runs on rights with nil value" do
         ex = {a: 1, b: 2, d: 3}
         result = described_class.run do |y|
-          v1 = y.yield { fetch(ex, :a) }
-          v2 = y.yield { fetch(ex, :b) }
-          v3 = (y.yield { fetch(ex, :c) }) || 0
-          v4 = y.yield { fetch(ex, :d) }
+          to_parse = parse(ex)
+          v1 = y.yield { to_parse.fetch(:a) }
+          v2 = y.yield { to_parse.fetch(:b) }
+          v3 = (y.yield { to_parse.fetch(:c) }) || 0
+          v4 = y.yield { to_parse.fetch(:d) }
           v1 + v2 + v3 + v4
         end.extract_parsed
 
