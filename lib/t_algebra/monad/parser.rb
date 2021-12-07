@@ -10,21 +10,19 @@ module TAlgebra
 
       class << self
         def failure(msg, name = nil)
-          left(msg).with_name(name)
+          new(is: Either::LEFT, value: msg, name: name)
         end
 
         def parse(val, name = nil)
-          right(val).with_name(name)
+          new(is: Either::RIGHT, value: val, name: name)
         end
 
         def fetch(o, key)
-          parser = parse(o.respond_to?(:[]) ? o[key] : o.send(key))
-          parser.with_name(key).optional
+          parse(o).fetch(key)
         end
 
         def fetch!(o, key)
-          parser = parse(o.respond_to?(:[]) ? o[key] : o.send(key))
-          parser.with_name(key).required
+          parse(o).fetch!(key)
         end
 
         def run_bind(ma, &block)
@@ -34,21 +32,21 @@ module TAlgebra
         end
       end
 
+      alias_method :valid?, :right?
+      alias_method :failure?, :left?
+
       attr_reader :name
       def with_name(name)
         @name = name
         self
       end
 
-      alias_method :valid?, :right?
-      alias_method :failure?, :left?
-
       def fetch(key)
-        fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.optional
+        with_name(key).fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.optional
       end
 
       def fetch!(key)
-        fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.required
+        with_name(key).fmap { |o| o.respond_to?(:[]) ? o[key] : o.send(key) }.required
       end
 
       def fmap
@@ -77,6 +75,10 @@ module TAlgebra
       def extract_parsed(&block)
         return yield("#{name}: #{value}") if left? && !name.nil?
         from_either(&block)
+      end
+
+      def extract_parsed!
+        extract_parsed { |e| raise UnsafeError.new("#extract_parsed! exception. #{e}") }
       end
 
       def required

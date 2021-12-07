@@ -53,6 +53,16 @@ RSpec.describe TAlgebra::Monad::Maybe do
     end
   end
 
+  context "#fetch" do
+    it "can do &." do
+      val = just({a: {b: {c: 1}}}).fetch(:a).fetch(:b).fetch(:c).from_maybe!
+      expect(val).to eq(1)
+
+      val = just({a: {b: {c: 1}}}).fetch(:a).fetch(:non_existant).fetch(:c).from_maybe { nil }
+      expect(val).to eq(nil)
+    end
+  end
+
   context "Functor" do
     describe "#fmap" do
       it "maps when just" do

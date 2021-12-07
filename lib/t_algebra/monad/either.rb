@@ -17,14 +17,16 @@ module TAlgebra
         end
       end
 
-      def fmap(&block)
-        return dup if left? || !block
+      def fmap
+        raise UseError.new("#fmap requires a block") unless block_given?
+        return dup if left?
 
         self.class.pure(yield(value))
       end
 
       def bind(&block)
-        return dup if left? || !block
+        raise UseError.new("#bind requires a block") unless block
+        return dup if left?
 
         self.class.instance_exec(value, &block)
       end
@@ -37,7 +39,12 @@ module TAlgebra
         is == RIGHT
       end
 
+      def from_either!
+        from_either { |e| raise UnsafeError.new("#from_either! exception. #{e}") }
+      end
+
       def from_either
+        raise UseError.new("#from_either called without block") unless block_given?
         return yield(value) if left?
         value
       end

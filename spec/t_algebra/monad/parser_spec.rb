@@ -124,19 +124,19 @@ RSpec.describe TAlgebra::Monad::Parser do
         it "does &." do
           ex = parse({a: {b: {c: 5}}})
           result1 = ex.fetch(:a).fetch(:b).fetch(:c)
-          expect(result1.extract_parsed).to eq(5)
+          expect(result1.extract_parsed!).to eq(5)
 
           result2 = ex.fetch(:a).fetch(:non_existant).fetch(:c)
-          expect(result2.extract_parsed).to eq(nil)
+          expect(result2.extract_parsed!).to eq(nil)
         end
 
         it "does ." do
           ex = parse({a: {b: {c: 5}}})
           result1 = ex.fetch!(:a).fetch!(:b).fetch!(:c)
-          expect(result1.extract_parsed).to eq(5)
+          expect(result1.extract_parsed!).to eq(5)
 
           result2 = ex.fetch!(:a).fetch!(:non_existant).fetch!(:c)
-          expect(result2.extract_parsed { |e| StandardError.new(e) }).to be_instance_of(StandardError)
+          expect { result2.extract_parsed! }.to raise_error(TAlgebra::Monad::UnsafeError)
         end
       end
     end
@@ -301,20 +301,6 @@ RSpec.describe TAlgebra::Monad::Parser do
         end
 
         expect(result).to eq(failure("err"))
-      end
-
-      it "runs on rights with nil value" do
-        ex = {a: 1, b: 2, d: 3}
-        result = described_class.run do |y|
-          to_parse = parse(ex)
-          v1 = y.yield { to_parse.fetch(:a) }
-          v2 = y.yield { to_parse.fetch(:b) }
-          v3 = (y.yield { to_parse.fetch(:c) }) || 0
-          v4 = y.yield { to_parse.fetch(:d) }
-          v1 + v2 + v3 + v4
-        end.extract_parsed
-
-        expect(result).to eq(6)
       end
     end
   end
