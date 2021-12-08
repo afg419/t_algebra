@@ -24,11 +24,11 @@ module TAlgebra
         self.class.pure(yield(value))
       end
 
-      def bind(&block)
-        raise UseError.new("#bind requires a block") unless block
+      def bind
+        raise UseError.new("#bind requires a block") unless block_given?
         return dup if left?
 
-        self.class.instance_exec(value, &block)
+        yield value
       end
 
       def left?

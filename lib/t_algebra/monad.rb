@@ -17,7 +17,15 @@ module TAlgebra
       end
 
       def run(&block)
-        e = Enumerator.new { |y| instance_exec(LazyYielder.new(y), &block) }
+        block_self = block.binding.receiver
+
+        self_class = self
+        block_self.define_singleton_method(:method_missing) do |m, *args, &block|
+          self_class.send(m, *args, &block)
+        end
+
+        e = Enumerator.new { |y| block_self.instance_exec(LazyYielder.new(y), &block) }
+
         run_recursive(e, [])
       end
 

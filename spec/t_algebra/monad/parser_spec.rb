@@ -5,6 +5,32 @@ class FetchableExample
   end
 end
 
+class Test
+  def test
+    payload = {a: 1, b: 2}
+
+    TAlgebra::Monad::Parser.run do |y|
+      a = y.yield { a_parser(payload) }
+      c = some_method
+      c2 = y.yield { parse(some_method) }
+      b = y.yield { b_parser(payload) }
+      a + b + c + c2
+    end
+  end
+
+  def a_parser(payload)
+    TAlgebra::Monad::Parser.parse(payload).fetch!(:a).is_a?(Numeric).validate("postive") { |x| x > 0 }
+  end
+
+  def b_parser(payload)
+    TAlgebra::Monad::Parser.parse(payload).fetch!(:b).is_a?(Numeric).validate("postive") { |x| x > 0 }
+  end
+
+  def some_method
+    4
+  end
+end
+
 RSpec.describe TAlgebra::Monad::Parser do
   describe "constructors" do
     it ".parse" do
@@ -301,6 +327,12 @@ RSpec.describe TAlgebra::Monad::Parser do
         end
 
         expect(result).to eq(failure("err"))
+      end
+
+      it "can call static and defined methods" do
+        result = Test.new.test.extract_parsed!
+
+        expect(result).to eq(11)
       end
     end
   end

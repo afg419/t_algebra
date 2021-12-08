@@ -50,9 +50,10 @@ to reproduce the same functionality:
 # @return [TAlgebra::Monad::Maybe]
 def get_address(user)
     TAlgebra::Monad::Maybe.run do |y|
-        street = y.yield { to_maybe(user.street) }
-        city = y.yield { to_maybe(user.city) }
-        state = y.yield { to_maybe(user.state) }
+        m_user = just(user)
+        street = y.yield { m_user.fetch(:street) }
+        city = y.yield { m_user.fetch(:city) }
+        state = y.yield { m_user.fetch(:state) }
         "#{street}, #{city} #{state.upcase}"
     end
 end

@@ -69,7 +69,7 @@ module TAlgebra
 
       def validate(msg = "Invalid")
         n = name
-        bind { |val| yield(val) ? parse(val, n) : failure(msg, n) }
+        bind { |val| yield(val) ? Parser.parse(val, n) : Parser.failure(msg, n) }
       end
 
       def extract_parsed(&block)
