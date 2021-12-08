@@ -27,13 +27,13 @@ RSpec.describe TAlgebra::Monad::Parser do
         }
       }
 
-      hall_of_famer = TAlgebra::Monad::Parser.run do |y|
+      hall_of_famer = TAlgebra::Monad::Parser.chain do
         # validate presence with `.fetch!` and type with `#is_a?``
-        first = y.yield { fetch!(api_result, :firstName).is_a?(String) }
-        last = y.yield { fetch!(api_result, :lastName).is_a?(String) }
+        first = bound { fetch!(api_result, :firstName).is_a?(String) }
+        last = bound { fetch!(api_result, :lastName).is_a?(String) }
 
         # allow nil with `.fetch`. Transform fetched result with `#fmap` and apply custom validators with `#validate`
-        suffix = y.yield do
+        suffix = bound do
           fetch(api_result, :suffix)
             .is_a?(String)
             .fmap { |x| x.downcase }
@@ -42,7 +42,7 @@ RSpec.describe TAlgebra::Monad::Parser do
         end
 
         # previous parses like first + last + suffix can be used in subsequent parse definitions
-        full = y.yield do
+        full = bound do
           fetch!(api_result, :fullName)
             .is_a?(String)
             .validate("Full name consistent") { |x| x.include?(first.capitalize) && x.include?(last.capitalize) }
@@ -50,18 +50,18 @@ RSpec.describe TAlgebra::Monad::Parser do
         end
 
         # This will fmap the born date string to a Date object, or the parse will fail
-        born = y.yield { fetch!(api_result, :born).fmap { |x| Date.parse(x) } }
-        died = y.yield { fetch(api_result, :died).fmap { |x| Date.parse(x) } }
+        born = bound { fetch!(api_result, :born).fmap { |x| Date.parse(x) } }
+        died = bound { fetch(api_result, :died).fmap { |x| Date.parse(x) } }
 
         # We may want to validate part of the structure without needing its result
-        y.yield do
+        bound do
           fetch(api_result, :livedTo)
             .is_a?(Numeric)
             .validate("Age is correct") { |x| died.nil? ? true : (died.year - born.year == x) }
         end
 
-        team_hash = y.yield { fetch!(api_result, :team).is_a?(Hash) }
-        team = y.yield do
+        team_hash = bound { fetch!(api_result, :team).is_a?(Hash) }
+        team = bound do
           fetch!(team_hash, :name)
             .is_a?(String)
             .validate("Teamname known") { |t| true }

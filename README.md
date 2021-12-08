@@ -43,16 +43,18 @@ end
 ```
 
 The class `TAlgebra::Monad::Maybe` wraps a result which may or may not be nil, and uses the Monad tech of `bind` + `fmap` to 
-sensibly manipulate that result. The below example uses `run/yield` notation (analagous to Haskell `do` notation or js `async/await`)
+sensibly manipulate that result. The below example uses `chain/bound` notation (analagous to Haskell `do/<-` notation or js `async/await`)
 to reproduce the same functionality:
 
 ```
 # @return [TAlgebra::Monad::Maybe]
 def get_address(user)
-    TAlgebra::Monad::Maybe.run do |y|
-        street = y.yield { to_maybe(user.street) }
-        city = y.yield { to_maybe(user.city) }
-        state = y.yield { to_maybe(user.state) }
+    TAlgebra::Monad::Maybe.chain do
+        m_user = just(user)
+        
+        street = bound { m_user.fetch(:street) }
+        city = bound { m_user.fetch(:city) }
+        state = bound { m_user.fetch(:state) }
         "#{street}, #{city} #{state.upcase}"
     end
 end
@@ -64,16 +66,16 @@ subsequently `Parser` which can validate and map over complex data structure.
 ```
 # @return [TAlgebra::Monad::Parser]
 def get_address(user)
-    TAlgebra::Monad::Parser.run do |y|
+    TAlgebra::Monad::Parser.chain do
         # validate street is present with `#fetch!`
-        street = y.yield { fetch!(user, :street) }
+        street = bound { fetch!(user, :street) }
         
         # validate that the city is a string with is `#is_a?`
-        city = y.yield { fetch!(user, :city).is_a?(String) }
+        city = bound { fetch!(user, :city).is_a?(String) }
         
         # validate that the state is a 2 letter long string with `#validate` 
         # and transform to all caps with `#fmap`
-        state = y.yield do 
+        state = bound do 
             fetch!(user, :state)
                 .is_a?(String)
                 .validate("Is 2 letter code"){ |state| state.length == 2 }
@@ -96,7 +98,8 @@ class ExtAPI
     
     class << self
         def call(verb, path)
-            ... make api cal
+            result = ... make api cal
+            new(success: result)
         rescue => e
             new(http_error: {e.status, e.message})
         end
@@ -121,16 +124,16 @@ And it could be used like:
 
 ```
 def user_cities
-    ExtAPI.run do |y|
-        users = y.yield { call('GET', '/users') }
-        profiles = y.yield { call('GET', "/users/profile?id=#{users.map(&:id).to_json}" } 
+    ExtAPI.chain do
+        users = bound { call('GET', '/users') }
+        profiles = bound { call('GET', "/users/profile?id=#{users.map(&:id).to_json}" } 
         profiles.map(&:city).uniq
     end
 end
 ```
 
-(Note that while the concept of Promise is monadic, the above ExtAPI implementation is entirely synchronous.) Should
-either of the two calls fail, this method will return that error status and message to be handled by the client code.
+Should either of the two calls fail, this method will return that error status and message to be handled by the client code.
+(Note that while the concept of Promise is monadic, the above ExtAPI implementation is entirely synchronous.)
 
 ## Development
 

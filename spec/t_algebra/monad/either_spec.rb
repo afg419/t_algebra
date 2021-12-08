@@ -129,11 +129,11 @@ RSpec.describe TAlgebra::Monad::Either do
       end
     end
 
-    describe ".run" do
+    describe ".chain" do
       it "runs on rights" do
-        result = described_class.run do |y|
-          v1 = y.yield { right(5) }
-          v2 = y.yield { right(v1 + 10) }
+        result = described_class.chain do
+          v1 = bound { right(5) }
+          v2 = bound { right(v1 + 10) }
           v1 + v2
         end
 
@@ -141,9 +141,9 @@ RSpec.describe TAlgebra::Monad::Either do
       end
 
       it "short circuits on lefts" do
-        result = described_class.run do |y|
-          v1 = y.yield { right(5) }
-          v2 = y.yield { left("err") }
+        result = described_class.chain do
+          v1 = bound { right(5) }
+          v2 = bound { left("err") }
           v1 + v2
         end
 

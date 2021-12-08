@@ -5,6 +5,32 @@ class FetchableExample
   end
 end
 
+class Test
+  def test
+    payload = {a: 1, b: 2}
+
+    TAlgebra::Monad::Parser.chain do
+      a = bound { a_parser(payload) }
+      c = some_method
+      c2 = bound { parse(some_method) }
+      b = bound { b_parser(payload) }
+      a + b + c + c2
+    end
+  end
+
+  def a_parser(payload)
+    TAlgebra::Monad::Parser.parse(payload).fetch!(:a).is_a?(Numeric).validate("postive") { |x| x > 0 }
+  end
+
+  def b_parser(payload)
+    TAlgebra::Monad::Parser.parse(payload).fetch!(:b).is_a?(Numeric).validate("postive") { |x| x > 0 }
+  end
+
+  def some_method
+    4
+  end
+end
+
 RSpec.describe TAlgebra::Monad::Parser do
   describe "constructors" do
     it ".parse" do
@@ -136,7 +162,7 @@ RSpec.describe TAlgebra::Monad::Parser do
           expect(result1.extract_parsed!).to eq(5)
 
           result2 = ex.fetch!(:a).fetch!(:non_existant).fetch!(:c)
-          expect { result2.extract_parsed! }.to raise_error(TAlgebra::Monad::UnsafeError)
+          expect { result2.extract_parsed! }.to raise_error(TAlgebra::UnsafeError)
         end
       end
     end
@@ -282,11 +308,11 @@ RSpec.describe TAlgebra::Monad::Parser do
       end
     end
 
-    describe ".run" do
+    describe ".chain" do
       it "runs on rights" do
-        result = described_class.run do |y|
-          v1 = y.yield { parse(5) }
-          v2 = y.yield { parse(v1 + 10) }
+        result = described_class.chain do
+          v1 = bound { parse(5) }
+          v2 = bound { parse(v1 + 10) }
           v1 + v2
         end
 
@@ -294,13 +320,19 @@ RSpec.describe TAlgebra::Monad::Parser do
       end
 
       it "short circuits on lefts" do
-        result = described_class.run do |y|
-          v1 = y.yield { parse(5) }
-          v2 = y.yield { failure("err") }
+        result = described_class.chain do
+          v1 = bound { parse(5) }
+          v2 = bound { failure("err") }
           v1 + v2
         end
 
         expect(result).to eq(failure("err"))
+      end
+
+      it "can call static and defined methods" do
+        result = Test.new.test.extract_parsed!
+
+        expect(result).to eq(11)
       end
     end
   end

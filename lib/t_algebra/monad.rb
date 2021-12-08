@@ -1,3 +1,4 @@
+require "fiber"
 # @abstract
 module TAlgebra
   module Monad
@@ -6,65 +7,57 @@ module TAlgebra
     end
 
     module Static
-      class LazyYielder
-        def initialize(yielder)
-          @yielder = yielder
+      def chain(&block)
+        receiver = augmented_receiver(block)
+        fiber_initializer = -> { Fiber.new { receiver.instance_exec(&block) } }
+        chain_recursive(fiber_initializer, [])
+      end
+      alias_method :run, :chain
+
+      def bound(&block)
+        Fiber.yield(block)
+      end
+      alias_method :_pick, :bound
+
+      def augmented_receiver(block)
+        block_self = block.binding.receiver
+
+        self_class = self
+        block_self.define_singleton_method(:method_missing) do |m, *args, &block|
+          self_class.send(m, *args, &block)
         end
 
-        def yield(&block)
-          @yielder.yield(block)
-        end
+        block_self
       end
 
-      def run(&block)
-        e = Enumerator.new { |y| instance_exec(LazyYielder.new(y), &block) }
-        run_recursive(e, [])
-      end
-
-      def run_bind(ma, &block)
+      def chain_bind(ma, &block)
         raise "Yield blocks must return instances of #{self}" unless ma.instance_of?(self)
         ma.bind(&block)
       end
 
-      def lift_a2(ma, mb, &block)
+      def lift_a2(ma, mb)
         ma.bind do |a|
           mb.bind do |b|
-            pure(block.call(a, b))
+            pure(yield(a, b))
           end
         end
       end
 
       private
 
-      def run_recursive(enum, historical_values)
-        enum.rewind
+      def chain_recursive(fiber_initializer, historical_values)
+        fiber = fiber_initializer.call
 
+        val = fiber.resume
         historical_values.each do |h|
-          enum.next
-          enum.feed(h)
+          val = fiber.resume h
         end
 
-        if is_complete(enum)
-          val = value(enum)
-          val.is_a?(self.class) ? val : pure(val)
+        if fiber.alive?
+          chain_bind(val.call) { |a| chain_recursive(fiber_initializer, historical_values + [a]) }
         else
-          run_bind(enum.next.call) do |a|
-            run_recursive(enum, historical_values + [a])
-          end
+          val.is_a?(self.class) ? val : pure(val)
         end
-      end
-
-      def is_complete(enumerator)
-        enumerator.peek
-        false
-      rescue StopIteration
-        true
-      end
-
-      def value(enumerator)
-        enumerator.peek
-      rescue StopIteration
-        $!.result
       end
     end
 

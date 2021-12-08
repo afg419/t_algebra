@@ -1,7 +1,7 @@
 module TAlgebra
   module Monad
     class Parser < Either
-      include TAlgebra::Monad
+      include TAlgebra::Monad::SingleValued
 
       def initialize(is:, value:, name: nil)
         super(is: is, value: value)
@@ -25,7 +25,7 @@ module TAlgebra
           parse(o).fetch!(key)
         end
 
-        def run_bind(ma, &block)
+        def chain_bind(ma, &block)
           raise "Yield blocks must return instances of #{self}. Got #{ma.class}" unless [Parser, Parser::Optional].include?(ma.class)
 
           ma.as_parser.bind(&block)
@@ -69,7 +69,7 @@ module TAlgebra
 
       def validate(msg = "Invalid")
         n = name
-        bind { |val| yield(val) ? parse(val, n) : failure(msg, n) }
+        bind { |val| yield(val) ? Parser.parse(val, n) : Parser.failure(msg, n) }
       end
 
       def extract_parsed(&block)

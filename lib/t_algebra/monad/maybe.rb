@@ -1,7 +1,7 @@
 module TAlgebra
   module Monad
     class Maybe
-      include TAlgebra::Monad
+      include TAlgebra::Monad::SingleValued
 
       NOTHING = :nothing
       JUST = :just
@@ -19,12 +19,6 @@ module TAlgebra
         def to_maybe(value_or_nil)
           value_or_nil.nil? ? nothing : pure(value_or_nil)
         end
-
-        # def run_bind(ma, &block)
-        #   # raise "Yield blocks must return instances of #{self}. Got #{ma.class}" unless [Parser, Parser::Optional].include?(ma.class)
-        #
-        #   ma.bind(&block)
-        # end
       end
 
       def fmap(&block)
