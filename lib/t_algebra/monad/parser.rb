@@ -1,7 +1,7 @@
 module TAlgebra
   module Monad
     class Parser < Either
-      include TAlgebra::Monad
+      include TAlgebra::Monad::SingleValued
 
       def initialize(is:, value:, name: nil)
         super(is: is, value: value)

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    t_algebra (1.0.0)
+    t_algebra (1.1.1)
 
 GEM
   remote: https://rubygems.org/

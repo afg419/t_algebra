@@ -1,7 +1,7 @@
 module TAlgebra
   module Monad
     class Either
-      include TAlgebra::Monad
+      include TAlgebra::Monad::SingleValued
 
       LEFT = :left
       RIGHT = :right
