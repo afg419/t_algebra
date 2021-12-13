@@ -1,7 +1,7 @@
 module TAlgebra
   module Monad
     class Maybe
-      include TAlgebra::Monad
+      include TAlgebra::Monad::SingleValued
 
       NOTHING = :nothing
       JUST = :just

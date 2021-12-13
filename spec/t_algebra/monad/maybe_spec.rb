@@ -134,9 +134,9 @@ RSpec.describe TAlgebra::Monad::Maybe do
 
     describe ".run" do
       it "runs on just" do
-        result = described_class.run do |y|
-          v1 = y.yield { just(5) }
-          v2 = y.yield { just(v1 + 10) }
+        result = described_class.run do
+          v1 = _pick { just(5) }
+          v2 = _pick { just(v1 + 10) }
           v1 + v2
         end
 
@@ -144,9 +144,9 @@ RSpec.describe TAlgebra::Monad::Maybe do
       end
 
       it "short circuits on nothing" do
-        result = described_class.run do |y|
-          v1 = y.yield { just(5) }
-          v2 = y.yield { nothing }
+        result = described_class.run do
+          v1 = _pick { just(5) }
+          v2 = _pick { nothing }
           v1 + v2
         end
 

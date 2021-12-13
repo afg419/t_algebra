@@ -80,9 +80,9 @@ RSpec.describe TAlgebra::Monad::List do
 
     describe ".run" do
       it "runs like flatmap" do
-        result = described_class.run do |y|
-          v1 = y.yield { pure(3, 5) }
-          v2 = y.yield { pure(1, 2) }
+        result = described_class.run do
+          v1 = _pick { pure(3, 5) }
+          v2 = _pick { pure(1, 2) }
           v1**v2
         end
 

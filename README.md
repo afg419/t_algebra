@@ -49,11 +49,11 @@ to reproduce the same functionality:
 ```
 # @return [TAlgebra::Monad::Maybe]
 def get_address(user)
-    TAlgebra::Monad::Maybe.run do |y|
+    TAlgebra::Monad::Maybe.run do
         m_user = just(user)
-        street = y.yield { m_user.fetch(:street) }
-        city = y.yield { m_user.fetch(:city) }
-        state = y.yield { m_user.fetch(:state) }
+        street = _pick { m_user.fetch(:street) }
+        city = _pick { m_user.fetch(:city) }
+        state = _pick { m_user.fetch(:state) }
         "#{street}, #{city} #{state.upcase}"
     end
 end
@@ -65,16 +65,16 @@ subsequently `Parser` which can validate and map over complex data structure.
 ```
 # @return [TAlgebra::Monad::Parser]
 def get_address(user)
-    TAlgebra::Monad::Parser.run do |y|
+    TAlgebra::Monad::Parser.run do
         # validate street is present with `#fetch!`
-        street = y.yield { fetch!(user, :street) }
+        street = _pick { fetch!(user, :street) }
         
         # validate that the city is a string with is `#is_a?`
-        city = y.yield { fetch!(user, :city).is_a?(String) }
+        city = _pick { fetch!(user, :city).is_a?(String) }
         
         # validate that the state is a 2 letter long string with `#validate` 
         # and transform to all caps with `#fmap`
-        state = y.yield do 
+        state = _pick do 
             fetch!(user, :state)
                 .is_a?(String)
                 .validate("Is 2 letter code"){ |state| state.length == 2 }
@@ -122,9 +122,9 @@ And it could be used like:
 
 ```
 def user_cities
-    ExtAPI.run do |y|
-        users = y.yield { call('GET', '/users') }
-        profiles = y.yield { call('GET', "/users/profile?id=#{users.map(&:id).to_json}" } 
+    ExtAPI.run do
+        users = _pick { call('GET', '/users') }
+        profiles = _pick { call('GET', "/users/profile?id=#{users.map(&:id).to_json}" } 
         profiles.map(&:city).uniq
     end
 end

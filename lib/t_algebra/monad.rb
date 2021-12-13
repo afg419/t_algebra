@@ -1,3 +1,4 @@
+require "fiber"
 # @abstract
 module TAlgebra
   module Monad
@@ -6,17 +7,17 @@ module TAlgebra
     end
 
     module Static
-      class LazyYielder
-        def initialize(yielder)
-          @yielder = yielder
-        end
-
-        def yield(&block)
-          @yielder.yield(block)
-        end
+      def run(&block)
+        receiver = augmented_receiver(block)
+        fiber_initializer = -> { Fiber.new { receiver.instance_exec(&block) } }
+        run_recursive(fiber_initializer, [])
       end
 
-      def run(&block)
+      def _pick(&block)
+        Fiber.yield(block)
+      end
+
+      def augmented_receiver(block)
         block_self = block.binding.receiver
 
         self_class = self
@@ -24,9 +25,7 @@ module TAlgebra
           self_class.send(m, *args, &block)
         end
 
-        e = Enumerator.new { |y| block_self.instance_exec(LazyYielder.new(y), &block) }
-
-        run_recursive(e, [])
+        block_self
       end
 
       def run_bind(ma, &block)
@@ -34,45 +33,29 @@ module TAlgebra
         ma.bind(&block)
       end
 
-      def lift_a2(ma, mb, &block)
+      def lift_a2(ma, mb)
         ma.bind do |a|
           mb.bind do |b|
-            pure(block.call(a, b))
+            pure(yield(a, b))
           end
         end
       end
 
       private
 
-      def run_recursive(enum, historical_values)
-        enum.rewind
+      def run_recursive(fiber_initializer, historical_values)
+        fiber = fiber_initializer.call
 
+        val = fiber.resume
         historical_values.each do |h|
-          enum.next
-          enum.feed(h)
+          val = fiber.resume h
         end
 
-        if is_complete(enum)
-          val = value(enum)
-          val.is_a?(self.class) ? val : pure(val)
+        if fiber.alive?
+          run_bind(val.call) { |a| run_recursive(fiber_initializer, historical_values + [a]) }
         else
-          run_bind(enum.next.call) do |a|
-            run_recursive(enum, historical_values + [a])
-          end
+          val.is_a?(self.class) ? val : pure(val)
         end
-      end
-
-      def is_complete(enumerator)
-        enumerator.peek
-        false
-      rescue StopIteration
-        true
-      end
-
-      def value(enumerator)
-        enumerator.peek
-      rescue StopIteration
-        $!.result
       end
     end
 
