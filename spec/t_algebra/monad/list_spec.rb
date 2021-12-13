@@ -78,11 +78,11 @@ RSpec.describe TAlgebra::Monad::List do
       end
     end
 
-    describe ".run" do
+    describe ".chain" do
       it "runs like flatmap" do
-        result = described_class.run do
-          v1 = _pick { pure(3, 5) }
-          v2 = _pick { pure(1, 2) }
+        result = described_class.chain do
+          v1 = bound { pure(3, 5) }
+          v2 = bound { pure(1, 2) }
           v1**v2
         end
 

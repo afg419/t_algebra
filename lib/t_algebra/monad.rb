@@ -7,15 +7,17 @@ module TAlgebra
     end
 
     module Static
-      def run(&block)
+      def chain(&block)
         receiver = augmented_receiver(block)
         fiber_initializer = -> { Fiber.new { receiver.instance_exec(&block) } }
-        run_recursive(fiber_initializer, [])
+        chain_recursive(fiber_initializer, [])
       end
+      alias_method :run, :chain
 
-      def _pick(&block)
+      def bound(&block)
         Fiber.yield(block)
       end
+      alias_method :_pick, :bound
 
       def augmented_receiver(block)
         block_self = block.binding.receiver
@@ -28,7 +30,7 @@ module TAlgebra
         block_self
       end
 
-      def run_bind(ma, &block)
+      def chain_bind(ma, &block)
         raise "Yield blocks must return instances of #{self}" unless ma.instance_of?(self)
         ma.bind(&block)
       end
@@ -43,7 +45,7 @@ module TAlgebra
 
       private
 
-      def run_recursive(fiber_initializer, historical_values)
+      def chain_recursive(fiber_initializer, historical_values)
         fiber = fiber_initializer.call
 
         val = fiber.resume
@@ -52,7 +54,7 @@ module TAlgebra
         end
 
         if fiber.alive?
-          run_bind(val.call) { |a| run_recursive(fiber_initializer, historical_values + [a]) }
+          chain_bind(val.call) { |a| chain_recursive(fiber_initializer, historical_values + [a]) }
         else
           val.is_a?(self.class) ? val : pure(val)
         end

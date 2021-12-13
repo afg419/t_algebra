@@ -132,11 +132,11 @@ RSpec.describe TAlgebra::Monad::Maybe do
       end
     end
 
-    describe ".run" do
+    describe ".chain" do
       it "runs on just" do
-        result = described_class.run do
-          v1 = _pick { just(5) }
-          v2 = _pick { just(v1 + 10) }
+        result = described_class.chain do
+          v1 = bound { just(5) }
+          v2 = bound { just(v1 + 10) }
           v1 + v2
         end
 
@@ -144,9 +144,9 @@ RSpec.describe TAlgebra::Monad::Maybe do
       end
 
       it "short circuits on nothing" do
-        result = described_class.run do
-          v1 = _pick { just(5) }
-          v2 = _pick { nothing }
+        result = described_class.chain do
+          v1 = bound { just(5) }
+          v2 = bound { nothing }
           v1 + v2
         end
 

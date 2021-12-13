@@ -22,19 +22,19 @@ end
 
 class TAlgebraMaybe
   def justs
-    TAlgebra::Monad::Maybe.run do
-      a = _pick { just(3) }
-      b = _pick { just(4) }
-      c = _pick { just(5) }
+    TAlgebra::Monad::Maybe.chain do
+      a = bound { just(3) }
+      b = bound { just(4) }
+      c = bound { just(5) }
       a + b + c
     end
   end
 
   def nothings
-    TAlgebra::Monad::Maybe.run do
-      a = _pick { just(3) }
-      b = _pick { nothing }
-      c = _pick { just(5) }
+    TAlgebra::Monad::Maybe.chain do
+      a = bound { just(3) }
+      b = bound { nothing }
+      c = bound { just(5) }
       a + b + c
     end.from_maybe { Dry::Monads::None.new }
   end

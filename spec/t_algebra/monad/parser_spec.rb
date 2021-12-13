@@ -9,11 +9,11 @@ class Test
   def test
     payload = {a: 1, b: 2}
 
-    TAlgebra::Monad::Parser.run do
-      a = _pick { a_parser(payload) }
+    TAlgebra::Monad::Parser.chain do
+      a = bound { a_parser(payload) }
       c = some_method
-      c2 = _pick { parse(some_method) }
-      b = _pick { b_parser(payload) }
+      c2 = bound { parse(some_method) }
+      b = bound { b_parser(payload) }
       a + b + c + c2
     end
   end
@@ -308,11 +308,11 @@ RSpec.describe TAlgebra::Monad::Parser do
       end
     end
 
-    describe ".run" do
+    describe ".chain" do
       it "runs on rights" do
-        result = described_class.run do
-          v1 = _pick { parse(5) }
-          v2 = _pick { parse(v1 + 10) }
+        result = described_class.chain do
+          v1 = bound { parse(5) }
+          v2 = bound { parse(v1 + 10) }
           v1 + v2
         end
 
@@ -320,9 +320,9 @@ RSpec.describe TAlgebra::Monad::Parser do
       end
 
       it "short circuits on lefts" do
-        result = described_class.run do
-          v1 = _pick { parse(5) }
-          v2 = _pick { failure("err") }
+        result = described_class.chain do
+          v1 = bound { parse(5) }
+          v2 = bound { failure("err") }
           v1 + v2
         end
 

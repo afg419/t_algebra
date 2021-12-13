@@ -4,19 +4,19 @@ module TAlgebra
   module Monad
     module SingleValued
       module Static
-        def run(&block)
+        def chain(&block)
           receiver = augmented_receiver(block)
           fiber = Fiber.new { receiver.instance_exec(&block) }
-          run_recursive(fiber, [])
+          chain_recursive(fiber, [])
         end
 
         private
 
-        def run_recursive(fiber, current)
+        def chain_recursive(fiber, current)
           val = fiber.resume current
 
           if fiber.alive?
-            run_bind(val.call) { |subsequent| run_recursive(fiber, subsequent) }
+            chain_bind(val.call) { |subsequent| chain_recursive(fiber, subsequent) }
           else
             val.is_a?(self.class) ? val : pure(val)
           end

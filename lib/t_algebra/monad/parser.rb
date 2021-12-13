@@ -25,7 +25,7 @@ module TAlgebra
           parse(o).fetch!(key)
         end
 
-        def run_bind(ma, &block)
+        def chain_bind(ma, &block)
           raise "Yield blocks must return instances of #{self}. Got #{ma.class}" unless [Parser, Parser::Optional].include?(ma.class)
 
           ma.as_parser.bind(&block)
